@@ -1,1 +1,70 @@
+# 🌊 AquaGuard AI
 
+### AI-Based Water Quality Monitoring and Anomaly Detection System for Lake Biwa, Japan
+
+## 📌 About the Project
+
+AquaGuard AI is an AI-based environmental monitoring project designed to analyse historical water quality data from Lake Biwa, Japan.
+
+The system uses Machine Learning techniques to identify unusual patterns in water quality and provides interactive visualizations through a Streamlit dashboard.
+
+## 🎯 Objectives
+
+- Analyse historical water quality data.
+- Identify unusual water quality patterns.
+- Study historical water-level variations.
+- Analyse earthquake activity around Lake Biwa.
+- Explore relationships between earthquake activity and water quality.
+
+## 🚀 Key Features
+
+- Water Quality Analysis
+- Water Level Analysis
+- Earthquake Activity Analysis
+- Earthquake Distance Calculation using Haversine Formula
+- AI Anomaly Detection using Isolation Forest
+- Correlation Analysis
+- Interactive Streamlit Dashboard
+
+## 🧠 Machine Learning Algorithm
+
+**Isolation Forest**
+
+Used to identify unusual patterns in historical water quality measurements.
+
+Note: Detected anomalies indicate unusual data patterns and do not necessarily represent confirmed pollution events.
+
+## 🛠️ Technologies Used
+
+- Python
+- Pandas
+- NumPy
+- Matplotlib
+- Seaborn
+- Plotly
+- Scikit-learn
+- Streamlit
+
+## 📊 Dataset Information
+
+The project uses historical datasets related to:
+
+- Lake Biwa Water Quality
+- Lake Biwa Water Level
+- Earthquake Records around Lake Biwa
+
+The water-quality dataset contains annual observations from 1979 to 2018. The water-level dataset currently covers January 1993.
+
+## 🌐 Live Demo
+
+Explore the interactive AquaGuard AI dashboard:
+
+https://aquaguard-ai-kjrqnwvphdpeo5przfvev6.streamlit.app/
+
+## 💻 How to Run the Project
+
+1. Clone the repository.
+2. Install the required packages:
+
+```bash
+pip install -r requirements.txt
