@@ -1,7 +1,14 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+
 from pathlib import Path
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error, r2_score
+
+# -----------------------------------
+# PAGE CONFIGURATION
+# -----------------------------------
 
 st.set_page_config(
     page_title="AquaGuard AI",
@@ -10,22 +17,35 @@ st.set_page_config(
 )
 
 st.title("🌊 AquaGuard AI")
+
 st.subheader(
     "AI-Based Water Quality Monitoring and Anomaly Detection"
 )
+
 st.write("Lake Biwa, Japan")
 
 # -----------------------------------
-# LOAD DATASETS
+# LOAD DATASET PATHS
 # -----------------------------------
 
 anomaly_path = Path("outputs/aquaguard_anomaly_results.csv")
+
 earthquake_path = Path("outputs/earthquakes_within_50km.csv")
+
 correlation_path = Path("outputs/correlation_dataset.csv")
+
 water_level_path = Path("outputs/lake_biwa_water_level_cleaned.csv")
 
+prediction_path = Path("outputs/walk_forward_results.csv")
+
+# -----------------------------------
+# LOAD ANOMALY DATASET
+# -----------------------------------
+
 if not anomaly_path.exists():
+
     st.error("Anomaly results file not found. Run model.py first.")
+
     st.stop()
 
 water_df = pd.read_csv(anomaly_path)
@@ -35,13 +55,21 @@ water_df = pd.read_csv(anomaly_path)
 # -----------------------------------
 
 total_records = len(water_df)
-unusual_records = (water_df["Status"] == "Unusual").sum()
-normal_records = (water_df["Status"] == "Normal").sum()
+
+unusual_records = (
+    water_df["Status"] == "Unusual"
+).sum()
+
+normal_records = (
+    water_df["Status"] == "Normal"
+).sum()
 
 col1, col2, col3 = st.columns(3)
 
 col1.metric("Water Quality Records", total_records)
+
 col2.metric("Normal Records", normal_records)
+
 col3.metric("Unusual Records", unusual_records)
 
 st.divider()
@@ -50,12 +78,13 @@ st.divider()
 # TABS
 # -----------------------------------
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Water Quality",
     "AI Anomaly Detection",
     "Earthquake Analysis",
     "Correlation Analysis",
-    "Water Level"
+    "Water Level",
+    "COD Prediction"
 ])
 
 # -----------------------------------
@@ -86,10 +115,17 @@ with tab1:
         title=f"{feature} Trend"
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
 
     st.write("Water Quality Dataset")
-    st.dataframe(water_df, use_container_width=True)
+
+    st.dataframe(
+        water_df,
+        use_container_width=True
+    )
 
 # -----------------------------------
 # TAB 2: ANOMALY DETECTION
@@ -113,7 +149,10 @@ with tab2:
         hover_data=["COD_South_Basin_mg_L"]
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
 
     st.subheader("Detected Unusual Records")
 
@@ -121,7 +160,10 @@ with tab2:
         water_df["Status"] == "Unusual"
     ]
 
-    st.dataframe(unusual_df, use_container_width=True)
+    st.dataframe(
+        unusual_df,
+        use_container_width=True
+    )
 
     st.download_button(
         "Download Anomaly Results",
@@ -182,11 +224,18 @@ with tab3:
             title="Recorded Nearby Earthquakes Per Year"
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
 
-        st.dataframe(earthquake_df, use_container_width=True)
+        st.dataframe(
+            earthquake_df,
+            use_container_width=True
+        )
 
     else:
+
         st.info("Nearby earthquake dataset not found.")
 
 # -----------------------------------
@@ -228,7 +277,10 @@ with tab4:
             title="Earthquake Activity vs North Basin COD"
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
 
         fig2 = px.scatter(
             corr_df,
@@ -237,7 +289,10 @@ with tab4:
             title="Earthquake Activity vs South Basin COD"
         )
 
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(
+            fig2,
+            use_container_width=True
+        )
 
         st.caption(
             "Correlation indicates association, not causation. "
@@ -246,6 +301,7 @@ with tab4:
         )
 
     else:
+
         st.info("Correlation dataset not found.")
 
 # -----------------------------------
@@ -273,7 +329,10 @@ with tab5:
             title="Lake Biwa Water Level - January 1993"
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
 
         st.info(
             "This dataset contains 62 valid measurements "
@@ -282,7 +341,158 @@ with tab5:
         )
 
     else:
+
         st.info("Water-level dataset not found.")
+
+# -----------------------------------
+# TAB 6: COD PREDICTION
+# -----------------------------------
+
+with tab6:
+
+    st.header("AI-Based COD Prediction")
+
+    if prediction_path.exists():
+
+        prediction_df = pd.read_csv(prediction_path)
+
+        # Calculate model performance
+
+        actual = prediction_df["Actual_COD"]
+
+        predicted = prediction_df["Random_Forest"]
+
+        mae = mean_absolute_error(
+            actual,
+            predicted
+        )
+
+        rmse = mean_squared_error(
+            actual,
+            predicted
+        ) ** 0.5
+
+        r2 = r2_score(
+            actual,
+            predicted
+        )
+
+        # Display model metrics
+
+        st.subheader("Random Forest Model Performance")
+
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric(
+            "MAE",
+            round(mae, 4)
+        )
+
+        col2.metric(
+            "RMSE",
+            round(rmse, 4)
+        )
+
+        col3.metric(
+            "R² Score",
+            round(r2, 4)
+        )
+
+        st.success(
+            "Random Forest achieved the best performance "
+            "among the tested models in walk-forward validation."
+        )
+
+        # Actual vs predicted graph
+
+        st.subheader("Actual vs Predicted COD")
+
+        fig = px.line(
+            prediction_df,
+            x="Year",
+            y=["Actual_COD", "Random_Forest"],
+            markers=True,
+            title="Actual vs Random Forest Predicted COD"
+        )
+
+        fig.update_layout(
+            xaxis_title="Year",
+            yaxis_title="COD (mg/L)",
+            legend_title="Measurements"
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+        # Model comparison
+
+        st.subheader("Model Comparison")
+
+        comparison = []
+
+        for model_name in [
+            "Linear_Regression",
+            "Random_Forest",
+            "Dummy_Regressor"
+        ]:
+
+            model_predictions = prediction_df[model_name]
+
+            comparison.append({
+                "Model": model_name,
+                "MAE": mean_absolute_error(
+                    actual,
+                    model_predictions
+                ),
+                "RMSE": mean_squared_error(
+                    actual,
+                    model_predictions
+                ) ** 0.5,
+                "R2 Score": r2_score(
+                    actual,
+                    model_predictions
+                )
+            })
+
+        comparison_df = pd.DataFrame(comparison)
+
+        st.dataframe(
+            comparison_df.round(4),
+            use_container_width=True
+        )
+
+        # Validation results
+
+        st.subheader("Walk-Forward Validation Results")
+
+        st.dataframe(
+            prediction_df,
+            use_container_width=True
+        )
+
+        # Download button
+
+        st.download_button(
+            "Download Prediction Results",
+            data=prediction_df.to_csv(index=False),
+            file_name="walk_forward_results.csv",
+            mime="text/csv"
+        )
+
+        st.info(
+            "The model was evaluated using historical data "
+            "from 1997 to 2018. These are experimental "
+            "predictions, not validated future pollution forecasts."
+        )
+
+    else:
+
+        st.warning(
+            "Prediction results not found. "
+            "Run cod_prediction.py first."
+        )
 
 # -----------------------------------
 # ABOUT
@@ -298,9 +508,15 @@ project that analyses historical Lake Biwa water-quality
 measurements, identifies unusual patterns using Isolation
 Forest, and examines nearby earthquake records.
 
+The system also evaluates experimental COD predictions
+using Linear Regression, Random Forest and baseline models
+with walk-forward validation.
+
 The system provides historical data analysis and
 visualization. It does not currently provide validated
 real-time pollution detection or earthquake-based warnings.
 """)
 
-st.success("AquaGuard AI Dashboard Loaded Successfully!")
+st.success(
+    "AquaGuard AI Dashboard Loaded Successfully!"
+)
