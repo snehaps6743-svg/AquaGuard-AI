@@ -29,23 +29,21 @@ st.write("Lake Biwa, Japan")
 # -----------------------------------
 
 anomaly_path = Path("outputs/aquaguard_anomaly_results.csv")
-
 earthquake_path = Path("outputs/earthquakes_within_50km.csv")
-
 correlation_path = Path("outputs/correlation_dataset.csv")
-
 water_level_path = Path("outputs/lake_biwa_water_level_cleaned.csv")
-
 prediction_path = Path("outputs/walk_forward_results.csv")
+
+latest_water_path = Path(
+    "data/lake_biwa_latest_cleaned.csv"
+)
 
 # -----------------------------------
 # LOAD ANOMALY DATASET
 # -----------------------------------
 
 if not anomaly_path.exists():
-
     st.error("Anomaly results file not found. Run model.py first.")
-
     st.stop()
 
 water_df = pd.read_csv(anomaly_path)
@@ -67,9 +65,7 @@ normal_records = (
 col1, col2, col3 = st.columns(3)
 
 col1.metric("Water Quality Records", total_records)
-
 col2.metric("Normal Records", normal_records)
-
 col3.metric("Unusual Records", unusual_records)
 
 st.divider()
@@ -78,13 +74,14 @@ st.divider()
 # TABS
 # -----------------------------------
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "Water Quality",
     "AI Anomaly Detection",
     "Earthquake Analysis",
     "Correlation Analysis",
     "Water Level",
-    "COD Prediction"
+    "COD Prediction",
+    "Latest Official Monitoring"
 ])
 
 # -----------------------------------
@@ -115,10 +112,7 @@ with tab1:
         title=f"{feature} Trend"
     )
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+    st.plotly_chart(fig, use_container_width=True)
 
     st.write("Water Quality Dataset")
 
@@ -149,10 +143,7 @@ with tab2:
         hover_data=["COD_South_Basin_mg_L"]
     )
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+    st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Detected Unusual Records")
 
@@ -224,10 +215,7 @@ with tab3:
             title="Recorded Nearby Earthquakes Per Year"
         )
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+        st.plotly_chart(fig, use_container_width=True)
 
         st.dataframe(
             earthquake_df,
@@ -277,10 +265,7 @@ with tab4:
             title="Earthquake Activity vs North Basin COD"
         )
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+        st.plotly_chart(fig, use_container_width=True)
 
         fig2 = px.scatter(
             corr_df,
@@ -289,10 +274,7 @@ with tab4:
             title="Earthquake Activity vs South Basin COD"
         )
 
-        st.plotly_chart(
-            fig2,
-            use_container_width=True
-        )
+        st.plotly_chart(fig2, use_container_width=True)
 
         st.caption(
             "Correlation indicates association, not causation. "
@@ -329,10 +311,7 @@ with tab5:
             title="Lake Biwa Water Level - January 1993"
         )
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+        st.plotly_chart(fig, use_container_width=True)
 
         st.info(
             "This dataset contains 62 valid measurements "
@@ -356,54 +335,30 @@ with tab6:
 
         prediction_df = pd.read_csv(prediction_path)
 
-        # Calculate model performance
-
         actual = prediction_df["Actual_COD"]
-
         predicted = prediction_df["Random_Forest"]
 
-        mae = mean_absolute_error(
-            actual,
-            predicted
-        )
+        mae = mean_absolute_error(actual, predicted)
 
         rmse = mean_squared_error(
             actual,
             predicted
         ) ** 0.5
 
-        r2 = r2_score(
-            actual,
-            predicted
-        )
-
-        # Display model metrics
+        r2 = r2_score(actual, predicted)
 
         st.subheader("Random Forest Model Performance")
 
         col1, col2, col3 = st.columns(3)
 
-        col1.metric(
-            "MAE",
-            round(mae, 4)
-        )
-
-        col2.metric(
-            "RMSE",
-            round(rmse, 4)
-        )
-
-        col3.metric(
-            "R² Score",
-            round(r2, 4)
-        )
+        col1.metric("MAE", round(mae, 4))
+        col2.metric("RMSE", round(rmse, 4))
+        col3.metric("R² Score", round(r2, 4))
 
         st.success(
             "Random Forest achieved the best performance "
             "among the tested models in walk-forward validation."
         )
-
-        # Actual vs predicted graph
 
         st.subheader("Actual vs Predicted COD")
 
@@ -421,12 +376,7 @@ with tab6:
             legend_title="Measurements"
         )
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-        # Model comparison
+        st.plotly_chart(fig, use_container_width=True)
 
         st.subheader("Model Comparison")
 
@@ -463,16 +413,12 @@ with tab6:
             use_container_width=True
         )
 
-        # Validation results
-
         st.subheader("Walk-Forward Validation Results")
 
         st.dataframe(
             prediction_df,
             use_container_width=True
         )
-
-        # Download button
 
         st.download_button(
             "Download Prediction Results",
@@ -495,6 +441,211 @@ with tab6:
         )
 
 # -----------------------------------
+# TAB 7: LATEST OFFICIAL MONITORING
+# -----------------------------------
+
+with tab7:
+
+    st.header("Latest Official Lake Biwa Water Quality Monitoring")
+
+    st.write(
+        "Explore official water-quality observations from "
+        "54 Lake Biwa monitoring locations."
+    )
+
+    if latest_water_path.exists():
+
+        latest_df = pd.read_csv(latest_water_path)
+
+        latest_df["Date"] = pd.to_datetime(
+            latest_df["Date"],
+            errors="coerce"
+        )
+
+        latest_df = latest_df.dropna(subset=["Date"])
+
+        if not latest_df.empty:
+
+            # Overview metrics
+
+            latest_date = latest_df["Date"].max()
+
+            total_observations = len(latest_df)
+
+            total_locations = latest_df["Location"].nunique()
+
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric(
+                "Total Observations",
+                total_observations
+            )
+
+            col2.metric(
+                "Monitoring Locations",
+                total_locations
+            )
+
+            col3.metric(
+                "Latest Observation",
+                latest_date.strftime("%d %b %Y")
+            )
+
+            st.divider()
+
+            # Date information
+
+            st.subheader("Dataset Information")
+
+            st.write(
+                f"Observation period: "
+                f"{latest_df['Date'].min().strftime('%d %b %Y')} "
+                f"to {latest_date.strftime('%d %b %Y')}"
+            )
+
+            # Location filter
+
+            locations = sorted(
+                latest_df["Location"].dropna().unique().tolist()
+            )
+
+            selected_location = st.selectbox(
+                "Select Monitoring Location",
+                ["All Locations"] + locations
+            )
+
+            if selected_location == "All Locations":
+
+                filtered_df = latest_df.copy()
+
+            else:
+
+                filtered_df = latest_df[
+                    latest_df["Location"] == selected_location
+                ].copy()
+
+            # Parameter selection
+
+            st.subheader("Water Quality Analysis")
+
+            parameter_options = {
+                "Water Temperature": "Water_Temperature",
+                "Air Temperature": "Air_Temperature",
+                "Transparency": "Transparency",
+                "pH": "pH",
+                "Dissolved Oxygen (DO)": "DO",
+                "Biochemical Oxygen Demand (BOD)": "BOD",
+                "Chemical Oxygen Demand (COD)": "COD",
+                "Suspended Solids (SS)": "SS",
+                "Total Nitrogen": "Total_Nitrogen",
+                "Total Phosphorus": "Total_Phosphorus",
+                "Coliform Count": "Coliform_Count"
+            }
+
+            selected_parameter = st.selectbox(
+                "Choose a Water Quality Parameter",
+                list(parameter_options.keys())
+            )
+
+            parameter_column = parameter_options[
+                selected_parameter
+            ]
+
+            # Numeric chart
+
+            chart_df = filtered_df.copy()
+
+            chart_df[parameter_column] = pd.to_numeric(
+                chart_df[parameter_column],
+                errors="coerce"
+            )
+
+            chart_df = chart_df.dropna(
+                subset=[parameter_column]
+            )
+
+            if not chart_df.empty:
+
+                if selected_location == "All Locations":
+
+                    plot_df = (
+                        chart_df.groupby("Date")[parameter_column]
+                        .mean()
+                        .reset_index()
+                    )
+
+                    fig = px.line(
+                        plot_df,
+                        x="Date",
+                        y=parameter_column,
+                        markers=True,
+                        title=f"Average {selected_parameter} Across Monitoring Locations"
+                    )
+
+                else:
+
+                    fig = px.line(
+                        chart_df,
+                        x="Date",
+                        y=parameter_column,
+                        markers=True,
+                        title=f"{selected_parameter} - {selected_location}"
+                    )
+
+                fig.update_layout(
+                    xaxis_title="Observation Date",
+                    yaxis_title=selected_parameter
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True
+                )
+
+            else:
+
+                st.warning(
+                    "No numeric measurements are available "
+                    "for this parameter and selection."
+                )
+
+            st.caption(
+                "Charts use numeric readings only. Censored readings "
+                "such as <0.5 and >2.5 are excluded from numerical "
+                "calculations but preserved in the original-reading "
+                "columns."
+            )
+
+            # Latest measurement table
+
+            st.subheader("Official Monitoring Records")
+
+            st.dataframe(
+                filtered_df.sort_values("Date", ascending=False),
+                use_container_width=True
+            )
+
+            # Download button
+
+            st.download_button(
+                "Download Latest Water Quality Dataset",
+                data=latest_df.to_csv(index=False).encode("utf-8-sig"),
+                file_name="lake_biwa_latest_water_quality.csv",
+                mime="text/csv"
+            )
+
+        else:
+
+            st.warning("No valid observation dates found.")
+
+    else:
+
+        st.error(
+            "Latest water-quality dataset not found. "
+            "Check data/lake_biwa_latest_cleaned.csv"
+        )
+
+# -----------------------------------
 # ABOUT
 # -----------------------------------
 
@@ -504,16 +655,18 @@ st.header("About AquaGuard AI")
 
 st.write("""
 AquaGuard AI is an exploratory environmental monitoring
-project that analyses historical Lake Biwa water-quality
-measurements, identifies unusual patterns using Isolation
-Forest, and examines nearby earthquake records.
+project that analyses historical and latest published
+Lake Biwa water-quality observations.
 
-The system also evaluates experimental COD predictions
-using Linear Regression, Random Forest and baseline models
-with walk-forward validation.
+The system identifies unusual historical patterns using
+Isolation Forest, examines nearby earthquake records,
+analyses water-level observations and evaluates experimental
+COD predictions using machine learning.
 
-The system provides historical data analysis and
-visualization. It does not currently provide validated
+The latest official monitoring dataset provides
+location-wise water-quality analysis and visualization.
+
+The system does not currently provide validated
 real-time pollution detection or earthquake-based warnings.
 """)
 
