@@ -1,4 +1,4 @@
-﻿pandas
+pandas
 numpy
 matplotlib
 seaborn
@@ -6,3 +6,4 @@ scikit-learn
 streamlit
 plotly
 openpyxl
+lxml
