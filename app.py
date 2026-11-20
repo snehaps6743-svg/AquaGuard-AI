@@ -5,10 +5,10 @@ import requests
 import re
 
 from io import StringIO
-
 from pathlib import Path
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error, r2_score
+
 
 # -----------------------------------
 # PAGE CONFIGURATION
@@ -28,6 +28,7 @@ st.subheader(
 
 st.write("Lake Biwa, Japan")
 
+
 # -----------------------------------
 # LOAD DATASET PATHS
 # -----------------------------------
@@ -42,6 +43,7 @@ latest_water_path = Path(
     "data/lake_biwa_latest_cleaned.csv"
 )
 
+
 # -----------------------------------
 # LOAD ANOMALY DATASET
 # -----------------------------------
@@ -51,6 +53,7 @@ if not anomaly_path.exists():
     st.stop()
 
 water_df = pd.read_csv(anomaly_path)
+
 
 # -----------------------------------
 # OVERVIEW METRICS
@@ -74,6 +77,7 @@ col3.metric("Unusual Records", unusual_records)
 
 st.divider()
 
+
 # -----------------------------------
 # TABS
 # -----------------------------------
@@ -88,6 +92,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "Latest Official Monitoring",
     "Online Data Monitoring"
 ])
+
 
 # -----------------------------------
 # TAB 1: WATER QUALITY
@@ -125,6 +130,7 @@ with tab1:
         water_df,
         use_container_width=True
     )
+
 
 # -----------------------------------
 # TAB 2: ANOMALY DETECTION
@@ -172,6 +178,7 @@ with tab2:
         "An unusual record is an AI-flagged observation, "
         "not confirmed pollution."
     )
+
 
 # -----------------------------------
 # TAB 3: EARTHQUAKE ANALYSIS
@@ -230,6 +237,7 @@ with tab3:
     else:
 
         st.info("Nearby earthquake dataset not found.")
+
 
 # -----------------------------------
 # TAB 4: CORRELATION ANALYSIS
@@ -291,6 +299,7 @@ with tab4:
 
         st.info("Correlation dataset not found.")
 
+
 # -----------------------------------
 # TAB 5: WATER LEVEL
 # -----------------------------------
@@ -327,6 +336,7 @@ with tab5:
     else:
 
         st.info("Water-level dataset not found.")
+
 
 # -----------------------------------
 # TAB 6: COD PREDICTION
@@ -444,6 +454,7 @@ with tab6:
             "Prediction results not found. "
             "Run cod_prediction.py first."
         )
+
 
 # -----------------------------------
 # TAB 7: LATEST OFFICIAL MONITORING
@@ -650,8 +661,9 @@ with tab7:
             "Check data/lake_biwa_latest_cleaned.csv"
         )
 
+
 # -----------------------------------
-# ABOUT
+# ABOUT AQUAGUARD AI
 # -----------------------------------
 
 st.divider()
@@ -678,8 +690,10 @@ real-time pollution detection or earthquake-based warnings.
 st.success(
     "AquaGuard AI Dashboard Loaded Successfully!"
 )
+
+
 # -----------------------------------
-# TAB 8 - ONLINE DATA MONITORING
+# TAB 8: ONLINE DATA MONITORING
 # -----------------------------------
 
 with tab8:
@@ -691,51 +705,148 @@ with tab8:
         "directly from the official Shiga Prefecture website."
     )
 
+    # REFRESH OFFICIAL DATA AND RUN AI DETECTION
+
     if st.button("Refresh Official Online Data"):
 
-        with st.spinner("Fetching official Lake Biwa data..."):
+        with st.spinner(
+            "Fetching official data and running AI anomaly detection..."
+        ):
 
             try:
+
+                # Step 1: Fetch official observations
+
                 from fetch_official_data import fetch_official_data
 
                 fetch_official_data()
 
-                st.success("Official data retrieved successfully!")
+                # Step 2: Run AI anomaly detection
+
+                from online_anomaly_detection import detect_official_anomalies
+
+                detect_official_anomalies()
+
+                st.success(
+                    "Official data retrieved and AI anomaly detection completed!"
+                )
+
                 st.rerun()
 
             except Exception as e:
 
-                st.error(f"Data retrieval failed: {e}")
+                st.error(
+                    f"Data retrieval or anomaly detection failed: {e}"
+                )
 
-    online_file = Path("data/lake_biwa_official_online.csv")
+    # DISPLAY OFFICIAL ONLINE DATA
+
+    online_file = Path(
+        "data/lake_biwa_official_online.csv"
+    )
 
     if online_file.exists():
 
         online_df = pd.read_csv(online_file)
 
-        st.subheader("Latest Retrieved Observations")
+        if not online_df.empty:
 
-        st.metric(
-            "Survey Date",
-            online_df["Observation_Date"].iloc[0]
-        )
+            st.subheader("Latest Retrieved Observations")
 
-        st.metric(
-            "Total Observations",
-            len(online_df)
-        )
+            col1, col2 = st.columns(2)
 
-        st.dataframe(
-            online_df,
-            use_container_width=True
-        )
+            col1.metric(
+                "Survey Date",
+                online_df["Observation_Date"].iloc[0]
+            )
 
-        st.download_button(
-            "Download Online Water Quality Data",
-            data=online_df.to_csv(index=False).encode("utf-8-sig"),
-            file_name="lake_biwa_official_online.csv",
-            mime="text/csv"
-        )
+            col2.metric(
+                "Total Observations",
+                len(online_df)
+            )
+
+            st.dataframe(
+                online_df,
+                use_container_width=True
+            )
+
+            st.download_button(
+                "Download Online Water Quality Data",
+                data=online_df.to_csv(index=False).encode("utf-8-sig"),
+                file_name="lake_biwa_official_online.csv",
+                mime="text/csv"
+            )
+
+            # DISPLAY AI ANOMALY DETECTION RESULTS
+
+            anomaly_file = Path(
+                "outputs/official_online_anomaly_results.csv"
+            )
+
+            if anomaly_file.exists():
+
+                anomaly_df = pd.read_csv(anomaly_file)
+
+                st.divider()
+
+                st.subheader("AI Anomaly Detection Results")
+
+                col1, col2, col3 = st.columns(3)
+
+                col1.metric(
+                    "Total Observations",
+                    len(anomaly_df)
+                )
+
+                col2.metric(
+                    "Normal",
+                    (anomaly_df["Status"] == "Normal").sum()
+                )
+
+                col3.metric(
+                    "Potential Anomalies",
+                    (anomaly_df["Status"] == "Potential Anomaly").sum()
+                )
+
+                st.dataframe(
+                    anomaly_df[
+                        [
+                            "Observation_Date",
+                            "Monitoring_Location",
+                            "Depth",
+                            "Anomaly_Label",
+                            "Anomaly_Score",
+                            "Status"
+                        ]
+                    ],
+                    use_container_width=True
+                )
+
+                st.download_button(
+                    "Download AI Anomaly Results",
+                    data=anomaly_df.to_csv(index=False).encode("utf-8-sig"),
+                    file_name="official_online_anomaly_results.csv",
+                    mime="text/csv"
+                )
+
+                st.warning(
+                    "Potential anomalies are statistically unusual "
+                    "observations. They do not confirm pollution."
+                )
+
+            else:
+
+                st.info(
+                    "AI anomaly results are not available yet. "
+                    "Click Refresh Official Online Data to run detection."
+                )
+
+        else:
+
+            st.warning(
+                "The official online dataset is empty. "
+                "Please refresh the official data."
+            )
 
     else:
 
